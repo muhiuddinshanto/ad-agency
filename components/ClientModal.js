@@ -102,7 +102,7 @@ export default function ClientModal({ isOpen, onClose, onSuccess, client = null 
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
             <input
@@ -140,7 +140,7 @@ export default function ClientModal({ isOpen, onClose, onSuccess, client = null 
 
         <div className="bg-slate-50 p-4 rounded-2xl space-y-3">
           <p className="text-sm font-bold text-slate-900 uppercase tracking-wider">Platform Rates (BDT/$)</p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Facebook</label>
               <input
@@ -180,7 +180,7 @@ export default function ClientModal({ isOpen, onClose, onSuccess, client = null 
         <button
           disabled={loading}
           type="submit"
-          className="w-full py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50"
+          className="w-full py-3 min-h-[44px] bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50"
         >
           {loading ? (client ? 'Updating...' : 'Adding...') : (client ? 'Update Client' : 'Add Client')}
         </button>

@@ -64,7 +64,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
-        <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="bg-white p-4 md:p-8 rounded-2xl border border-slate-100 shadow-sm">
           <h2 className="text-xl font-bold text-slate-900 mb-6">Clients with Due Balance</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-left">

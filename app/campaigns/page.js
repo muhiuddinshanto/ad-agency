@@ -156,13 +156,13 @@ export default function CampaignsPage() {
                     <div className="flex justify-end gap-2">
                       <button 
                         onClick={() => handleEdit(camp)}
-                        className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
+                        className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
                       >
                         Manage
                       </button>
                       <button 
                         onClick={() => handleDelete(camp._id)}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                       >
                         Delete
                       </button>

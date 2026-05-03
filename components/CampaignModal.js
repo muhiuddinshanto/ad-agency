@@ -117,7 +117,7 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
             ))}
           </select>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Platform</label>
             <select
@@ -153,7 +153,7 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
             />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Start Date & Time</label>
             <input
@@ -220,7 +220,7 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
         <button
           disabled={loading}
           type="submit"
-          className="w-full py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50"
+          className="w-full py-3 min-h-[44px] bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50"
         >
           {loading ? (campaign ? 'Updating...' : 'Launching...') : (campaign ? 'Update Campaign' : 'Create Campaign')}
         </button>

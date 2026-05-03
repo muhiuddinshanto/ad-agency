@@ -83,7 +83,7 @@ export default function ClientsPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {filteredClients.map((client) => (
           <div key={client._id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group">
             <div className="flex flex-col lg:flex-row justify-between gap-6">
@@ -107,7 +107,7 @@ export default function ClientsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 border-t border-slate-50 pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-50 pt-4">
                   <div className="flex items-center gap-3 text-slate-500 text-sm">
                     <Mail className="w-4 h-4 text-primary-400" />
                     <span className="truncate">{client.email}</span>
@@ -137,13 +137,13 @@ export default function ClientsPage() {
                 <div className="flex gap-2 pt-2">
                   <button 
                     onClick={() => handleEdit(client)}
-                    className="flex-1 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-primary-50 hover:text-primary-600 rounded-xl transition-all"
+                    className="flex-1 py-2 min-h-[44px] text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-primary-50 hover:text-primary-600 rounded-xl transition-all flex items-center justify-center"
                   >
                     Edit
                   </button>
                   <button 
                     onClick={() => handleDelete(client._id)}
-                    className="flex-1 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
+                    className="flex-1 py-2 min-h-[44px] text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all flex items-center justify-center"
                   >
                     Delete
                   </button>

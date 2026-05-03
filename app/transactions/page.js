@@ -130,7 +130,7 @@ export default function TransactionsPage() {
                     <div className="flex justify-end gap-2">
                       <button 
                         onClick={() => handleDelete(t._id)}
-                        className="text-slate-400 hover:text-red-600 p-2 rounded-lg transition-colors"
+                        className="text-slate-400 hover:text-red-600 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors"
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>

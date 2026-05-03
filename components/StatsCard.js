@@ -7,7 +7,7 @@ export default function StatsCard({ title, value, icon: Icon, description, color
   };
 
   return (
-    <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm transition-transform hover:scale-[1.02] duration-200">
+    <div className="p-4 md:p-6 bg-white rounded-2xl border border-slate-100 shadow-sm transition-transform hover:scale-[1.02] duration-200">
       <div className="flex items-center justify-between mb-4">
         <div className={`p-3 rounded-xl ${colorMap[color]}`}>
           <Icon className="w-6 h-6" />
