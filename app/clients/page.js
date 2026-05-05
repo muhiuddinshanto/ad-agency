@@ -110,8 +110,8 @@ export default function ClientsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${(client.balance || 0) >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700 animate-pulse'}`}>
-                    {(client.balance || 0) >= 0 ? 'Advance' : 'Due'}
+                  <div className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${((client.totalSpent || 0) - (client.totalPaid || 0)) <= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700 animate-pulse'}`}>
+                    {((client.totalSpent || 0) - (client.totalPaid || 0)) <= 0 ? 'Advance' : 'Due'}
                   </div>
                 </div>
 
@@ -168,7 +168,7 @@ export default function ClientsPage() {
               </div>
 
               {/* Right Side: Financial Summary */}
-              <div className="lg:w-72 bg-slate-50/50 p-5 rounded-2xl space-y-4 border border-slate-100">
+              <div className="lg:w-80 bg-slate-50/50 p-5 rounded-2xl space-y-4 border border-slate-100">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2 text-slate-400">
                     <Wallet className="w-4 h-4" />
@@ -194,23 +194,36 @@ export default function ClientsPage() {
                   ) : (
                     <>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500">Total Spent:</span>
-                        <span className="font-bold text-slate-800">${(client.totalSpent || 0).toLocaleString()}</span>
+                        <span className="text-slate-500">Total Budget:</span>
+                        <span className="font-bold text-slate-900">${(client.totalBudget || 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500">Total Paid (USD eq.):</span>
+                        <span className="text-slate-500">Total Paid (USD):</span>
                         <span className="font-bold text-green-600">${(client.totalPaid || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500 font-medium">Running Spend:</span>
+                        <span className="font-bold text-orange-600">${(client.totalSpent || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm border-t border-slate-100 pt-2">
+                        <span className="text-slate-500 font-bold">Due Amount:</span>
+                        <span className={`font-black ${(client.totalSpent - client.totalPaid) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          ${((client.totalSpent || 0) - (client.totalPaid || 0)).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500">Future Remaining:</span>
+                        <span className="font-bold text-blue-400">${(client.futureDue || 0).toLocaleString()}</span>
                       </div>
                     </>
                   )}
-                  <div className="flex justify-between items-center text-sm pt-2 border-t border-slate-100">
-                    <span className="text-slate-500 font-bold">Current Balance:</span>
-                    <span className={`font-bold ${(client.balance || 0) < 0 ? 'text-red-600' : 'text-green-600'}`}>${(client.balance || 0).toLocaleString()}</span>
-                  </div>
                   
-                  <div className="mt-2 text-center">
+                  <div className="pt-3 flex items-center justify-between">
                     <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded ${client.serviceType === 'wallet' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
                       {client.serviceType === 'wallet' ? 'Wallet Service' : 'Campaign Service'}
+                    </span>
+                    <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded ${((client.totalSpent || 0) - (client.totalPaid || 0)) > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                      {((client.totalSpent || 0) - (client.totalPaid || 0)) > 0 ? 'Due Payment' : 'Credit Balance'}
                     </span>
                   </div>
                 </div>

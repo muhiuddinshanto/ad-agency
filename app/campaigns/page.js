@@ -1,5 +1,5 @@
 'use client';
-
+git
 import { useState, useEffect } from 'react';
 import CampaignModal from '@/components/CampaignModal';
 import { Plus, Search, Calendar, Target, PlayCircle, PauseCircle, TrendingUp, DollarSign } from 'lucide-react';

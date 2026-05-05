@@ -17,7 +17,6 @@ const ClientSchema = new mongoose.Schema({
   totalLoaded: { type: Number, default: 0 },
   totalPaid: { type: Number, default: 0 },
   balance: { type: Number, default: 0 },
-  futureDue: { type: Number, default: 0 },
 }, { timestamps: true });
 
 export default mongoose.models.Client || mongoose.model('Client', ClientSchema);

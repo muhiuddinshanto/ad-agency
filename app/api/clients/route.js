@@ -11,13 +11,20 @@ export async function GET() {
     await dbConnect();
     const clients = await Client.find({});
     
-    // Recalculate all client balances to ensure real-time data
+    const results = [];
     for (const client of clients) {
-      await recalculateBalance(client._id);
+      const balanceData = await recalculateBalance(client._id);
+      const clientObj = client.toObject();
+      results.push({
+        ...clientObj,
+        ...balanceData
+      });
     }
     
-    const updatedClients = await Client.find({}).sort({ createdAt: -1 });
-    return NextResponse.json(updatedClients);
+    // Sort by createdAt desc
+    results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    return NextResponse.json(results);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

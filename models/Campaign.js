@@ -18,7 +18,6 @@ CampaignSchema.pre('save', function(next) {
   if (this.startDate && this.endDate) {
     const start = new Date(this.startDate);
     const end = new Date(this.endDate);
-    const now = new Date();
     
     const durationInMs = Math.max(0, end.getTime() - start.getTime());
     const durationInDays = durationInMs / (1000 * 60 * 60 * 24);
@@ -28,19 +27,6 @@ CampaignSchema.pre('save', function(next) {
     } else if (this.type === 'lifetime') {
       // For lifetime, totalBudget is provided, dailyBudget is derived
       this.dailyBudget = durationInDays > 0 ? this.totalBudget / durationInDays : 0;
-    }
-
-    let daysPassed = 0;
-    if (now > start) {
-      const diffInMs = Math.min(now.getTime() - start.getTime(), end.getTime() - start.getTime());
-      daysPassed = Math.max(0, diffInMs / (1000 * 60 * 60 * 24));
-    }
-    
-    if (this.type === 'daily') {
-      this.runningSpend = (this.dailyBudget || 0) * daysPassed;
-    } else {
-      // For lifetime, spend is proportion of total budget
-      this.runningSpend = durationInDays > 0 ? (this.totalBudget * (daysPassed / durationInDays)) : 0;
     }
   }
   next();
