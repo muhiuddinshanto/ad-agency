@@ -11,7 +11,9 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
     name: campaign?.name || '',
     client: campaign?.client?._id || campaign?.client || '',
     platform: campaign?.platform || 'Facebook',
+    type: campaign?.type || 'daily',
     dailyBudget: campaign?.dailyBudget || '',
+    totalBudget: campaign?.totalBudget || '',
     startDate: campaign?.startDate ? new Date(campaign.startDate).toISOString().slice(0, 16) : '',
     endDate: campaign?.endDate ? new Date(campaign.endDate).toISOString().slice(0, 16) : '',
     status: campaign?.status || 'running'
@@ -23,7 +25,9 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
         name: campaign.name,
         client: campaign.client?._id || campaign.client,
         platform: campaign.platform,
+        type: campaign.type || 'daily',
         dailyBudget: campaign.dailyBudget,
+        totalBudget: campaign.totalBudget,
         startDate: new Date(campaign.startDate).toISOString().slice(0, 16),
         endDate: new Date(campaign.endDate).toISOString().slice(0, 16),
         status: campaign.status
@@ -33,7 +37,9 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
         name: '',
         client: '',
         platform: 'Facebook',
+        type: 'daily',
         dailyBudget: '',
+        totalBudget: '',
         startDate: '',
         endDate: '',
         status: 'running'
@@ -112,11 +118,40 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
             onChange={(e) => setFormData({ ...formData, client: e.target.value })}
           >
             <option value="">Choose a client...</option>
-            {clients.map(c => (
+            {clients.filter(c => c.serviceType === 'campaign').map(c => (
               <option key={c._id} value={c._id}>{c.name} ({c.companyName})</option>
             ))}
           </select>
         </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Campaign Type</label>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, type: 'daily' })}
+              className={`py-2 px-4 rounded-xl border text-sm font-semibold transition-all ${
+                formData.type === 'daily' 
+                ? 'bg-primary-50 border-primary-200 text-primary-600 ring-2 ring-primary-500/20' 
+                : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+              }`}
+            >
+              Daily Budget
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, type: 'lifetime' })}
+              className={`py-2 px-4 rounded-xl border text-sm font-semibold transition-all ${
+                formData.type === 'lifetime' 
+                ? 'bg-primary-50 border-primary-200 text-primary-600 ring-2 ring-primary-500/20' 
+                : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+              }`}
+            >
+              Lifetime Budget
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Platform</label>
@@ -132,13 +167,14 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Daily Budget (USD)
+              {formData.type === 'daily' ? 'Daily Budget (USD)' : 'Total Budget (USD)'}
               {formData.client && formData.platform && (
-                <span className="text-primary-600 ml-2 font-bold">
+                <span className="text-primary-600 ml-2 font-bold text-[10px]">
                   ≈ {(() => {
                     const client = clients.find(c => c._id === formData.client);
                     const rate = client?.rates?.[formData.platform] || client?.ratePerDollar || 120;
-                    return ((parseFloat(formData.dailyBudget) || 0) * rate).toLocaleString();
+                    const amount = formData.type === 'daily' ? formData.dailyBudget : formData.totalBudget;
+                    return ((parseFloat(amount) || 0) * rate).toLocaleString();
                   })()} BDT
                 </span>
               )}
@@ -147,9 +183,15 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
               required
               type="number"
               className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
-              placeholder="50"
-              value={formData.dailyBudget}
-              onChange={(e) => setFormData({ ...formData, dailyBudget: e.target.value })}
+              placeholder={formData.type === 'daily' ? "50" : "500"}
+              value={formData.type === 'daily' ? formData.dailyBudget : formData.totalBudget}
+              onChange={(e) => {
+                if (formData.type === 'daily') {
+                  setFormData({ ...formData, dailyBudget: e.target.value });
+                } else {
+                  setFormData({ ...formData, totalBudget: e.target.value });
+                }
+              }}
             />
           </div>
         </div>
@@ -176,7 +218,7 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
           </div>
         </div>
 
-        {formData.startDate && formData.endDate && formData.dailyBudget && (
+        {(formData.startDate && formData.endDate && (formData.dailyBudget || formData.totalBudget)) && (
           <div className="bg-primary-50 p-4 rounded-xl border border-primary-100">
             <div className="flex justify-between items-center text-sm">
               <span className="text-slate-600 font-medium">Precise Duration:</span>
@@ -193,6 +235,9 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
               <span className="text-slate-600 font-medium">Estimated Total Cost:</span>
               <span className="text-primary-700 font-bold text-lg">
                 ${(() => {
+                  if (formData.type === 'lifetime') {
+                    return (parseFloat(formData.totalBudget) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                  }
                   const start = new Date(formData.startDate);
                   const end = new Date(formData.endDate);
                   const hours = Math.max(0, (end - start) / (1000 * 60 * 60));

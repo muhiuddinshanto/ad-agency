@@ -12,6 +12,7 @@ export default function ClientModal({ isOpen, onClose, onSuccess, client = null 
     phone: '',
     companyName: '',
     ratePerDollar: '',
+    serviceType: 'campaign',
     rates: {
       Facebook: 120,
       Google: 120,
@@ -28,6 +29,7 @@ export default function ClientModal({ isOpen, onClose, onSuccess, client = null 
         phone: client.phone || '',
         companyName: client.companyName || '',
         ratePerDollar: client.ratePerDollar || '120',
+        serviceType: client.serviceType || 'campaign',
         rates: {
           Facebook: client.rates?.Facebook || client.ratePerDollar || 120,
           Google: client.rates?.Google || client.ratePerDollar || 120,
@@ -41,6 +43,7 @@ export default function ClientModal({ isOpen, onClose, onSuccess, client = null 
         phone: '', 
         companyName: '', 
         ratePerDollar: '120',
+        serviceType: 'campaign',
         rates: {
           Facebook: 120,
           Google: 120,
@@ -136,6 +139,34 @@ export default function ClientModal({ isOpen, onClose, onSuccess, client = null 
             value={formData.companyName}
             onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Service Type</label>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, serviceType: 'campaign' })}
+              className={`py-2 px-4 rounded-xl border text-sm font-semibold transition-all ${
+                formData.serviceType === 'campaign' 
+                ? 'bg-primary-50 border-primary-200 text-primary-600 ring-2 ring-primary-500/20' 
+                : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+              }`}
+            >
+              Campaigns
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, serviceType: 'wallet' })}
+              className={`py-2 px-4 rounded-xl border text-sm font-semibold transition-all ${
+                formData.serviceType === 'wallet' 
+                ? 'bg-primary-50 border-primary-200 text-primary-600 ring-2 ring-primary-500/20' 
+                : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+              }`}
+            >
+              USD Wallet
+            </button>
+          </div>
         </div>
 
         <div className="bg-slate-50 p-4 rounded-2xl space-y-3">

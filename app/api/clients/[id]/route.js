@@ -32,18 +32,25 @@ export async function PUT(req, { params }) {
     if (body.phone) client.phone = body.phone;
     if (body.companyName) client.companyName = body.companyName;
     if (body.ratePerDollar) client.ratePerDollar = body.ratePerDollar;
+    if (body.serviceType) client.serviceType = body.serviceType;
     
     // Update rates object explicitly
     if (body.rates) {
       client.rates = {
-        Facebook: body.rates.Facebook || client.rates.Facebook,
-        Google: body.rates.Google || client.rates.Google,
-        TikTok: body.rates.TikTok || client.rates.TikTok
+        Facebook: body.rates.Facebook || client.rates?.Facebook || 120,
+        Google: body.rates.Google || client.rates?.Google || 120,
+        TikTok: body.rates.TikTok || client.rates?.TikTok || 120
       };
     }
 
     await client.save();
-    return NextResponse.json(client);
+    
+    // Recalculate balance after update
+    const { recalculateBalance } = await import('@/lib/balance');
+    await recalculateBalance(client._id);
+    
+    const updatedClient = await Client.findById(client._id);
+    return NextResponse.json(updatedClient);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }

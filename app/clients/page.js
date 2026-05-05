@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import ClientModal from '@/components/ClientModal';
-import { Plus, Search, Mail, Phone, Building2, Wallet, Activity, Hash } from 'lucide-react';
+import LoadModal from '@/components/LoadModal';
+import { Plus, Search, Mail, Phone, Building2, Wallet, Activity, Hash, ArrowUpCircle } from 'lucide-react';
 
 export default function ClientsPage() {
   const [clients, setClients] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
+  const [loadClientId, setLoadClientId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchClients = async () => {
@@ -37,6 +40,11 @@ export default function ClientsPage() {
   const handleEdit = (client) => {
     setSelectedClient(client);
     setIsModalOpen(true);
+  };
+
+  const handleLoad = (clientId) => {
+    setLoadClientId(clientId);
+    setIsLoadModalOpen(true);
   };
 
   const handleDelete = async (id) => {
@@ -134,7 +142,16 @@ export default function ClientsPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-2 pt-2">
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {client.serviceType === 'wallet' && (
+                    <button 
+                      onClick={() => handleLoad(client._id)}
+                      className="flex-1 py-2 min-h-[44px] text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      <ArrowUpCircle className="w-4 h-4" />
+                      Load USD
+                    </button>
+                  )}
                   <button 
                     onClick={() => handleEdit(client)}
                     className="flex-1 py-2 min-h-[44px] text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-primary-50 hover:text-primary-600 rounded-xl transition-all flex items-center justify-center"
@@ -163,21 +180,38 @@ export default function ClientsPage() {
                 </div>
 
                 <div className="space-y-3 pt-3 border-t border-slate-200/60">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500">Total Budget:</span>
-                    <span className="font-bold text-slate-800">${(client.totalBudget || 0).toLocaleString()}</span>
+                  {client.serviceType === 'wallet' ? (
+                    <>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500">Total Loaded:</span>
+                        <span className="font-bold text-slate-800">${(client.totalLoaded || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500">Total Paid (USD eq.):</span>
+                        <span className="font-bold text-green-600">${(client.totalPaid || 0).toLocaleString()}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500">Total Spent:</span>
+                        <span className="font-bold text-slate-800">${(client.totalSpent || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-500">Total Paid (USD eq.):</span>
+                        <span className="font-bold text-green-600">${(client.totalPaid || 0).toLocaleString()}</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex justify-between items-center text-sm pt-2 border-t border-slate-100">
+                    <span className="text-slate-500 font-bold">Current Balance:</span>
+                    <span className={`font-bold ${(client.balance || 0) < 0 ? 'text-red-600' : 'text-green-600'}`}>${(client.balance || 0).toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500">Total Paid:</span>
-                    <span className="font-bold text-green-600">${(client.totalPaid || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500">Running Spend:</span>
-                    <span className="font-bold text-orange-600">${(client.totalSpent || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-slate-500">Future Due:</span>
-                    <span className="font-bold text-slate-800">${(client.futureDue || 0).toLocaleString()}</span>
+                  
+                  <div className="mt-2 text-center">
+                    <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded ${client.serviceType === 'wallet' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                      {client.serviceType === 'wallet' ? 'Wallet Service' : 'Campaign Service'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -191,6 +225,13 @@ export default function ClientsPage() {
         onClose={() => setIsModalOpen(false)} 
         onSuccess={fetchClients} 
         client={selectedClient}
+      />
+
+      <LoadModal 
+        isOpen={isLoadModalOpen} 
+        onClose={() => setIsLoadModalOpen(false)} 
+        onSuccess={fetchClients} 
+        initialClientId={loadClientId}
       />
     </div>
   );

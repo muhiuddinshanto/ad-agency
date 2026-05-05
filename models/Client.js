@@ -11,8 +11,10 @@ const ClientSchema = new mongoose.Schema({
     Google: { type: Number, default: 120 },
     TikTok: { type: Number, default: 120 }
   },
+  serviceType: { type: String, enum: ['campaign', 'wallet'], default: 'campaign' },
   totalBudget: { type: Number, default: 0 },
   totalSpent: { type: Number, default: 0 },
+  totalLoaded: { type: Number, default: 0 },
   totalPaid: { type: Number, default: 0 },
   balance: { type: Number, default: 0 },
   futureDue: { type: Number, default: 0 },

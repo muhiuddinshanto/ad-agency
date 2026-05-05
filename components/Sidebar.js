@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Megaphone, ReceiptText, TrendingUp, X } from 'lucide-react';
+import { LayoutDashboard, Users, Megaphone, ReceiptText, TrendingUp, X, Wallet } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -12,6 +12,7 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Clients', href: '/clients', icon: Users },
   { name: 'Campaigns', href: '/campaigns', icon: Megaphone },
+  { name: 'Wallet / USD Load', href: '/wallet', icon: Wallet },
   { name: 'Transactions', href: '/transactions', icon: ReceiptText },
 ];
 

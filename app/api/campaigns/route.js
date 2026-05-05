@@ -8,6 +8,15 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     await dbConnect();
+    
+    // Get unique client IDs to recalculate
+    const campaignsRaw = await Campaign.find({});
+    const clientIds = [...new Set(campaignsRaw.map(c => c.client.toString()))];
+    
+    for (const clientId of clientIds) {
+      await recalculateBalance(clientId);
+    }
+
     const campaigns = await Campaign.find({}).populate('client').sort({ createdAt: -1 });
     return NextResponse.json(campaigns);
   } catch (error) {

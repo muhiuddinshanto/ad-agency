@@ -29,10 +29,12 @@ export default function CampaignsPage() {
     fetchCampaigns();
   }, []);
 
-  const filteredCampaigns = Array.isArray(campaigns) ? campaigns.filter(camp => 
-    camp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    camp.client?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) : [];
+  const filteredCampaigns = Array.isArray(campaigns) ? campaigns.filter(camp => {
+    const matchesSearch = camp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         camp.client?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const isCampaignClient = camp.client?.serviceType === 'campaign';
+    return matchesSearch && isCampaignClient;
+  }) : [];
 
   const handleEdit = (campaign) => {
     setSelectedCampaign(campaign);
@@ -121,11 +123,18 @@ export default function CampaignsPage() {
                       {camp.platform}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 text-center">
                     <div className="flex flex-col items-center">
-                      <span className="font-bold text-slate-900">${(camp.dailyBudget || 0).toLocaleString()} <small className="text-slate-400 font-normal">/day</small></span>
+                      <span className="font-bold text-slate-900">
+                        ${(camp.type === 'daily' ? (camp.dailyBudget || 0) : (camp.totalBudget || 0)).toLocaleString()}
+                        <small className="text-slate-400 font-normal ml-1">
+                          {camp.type === 'daily' ? '/day' : '(lifetime)'}
+                        </small>
+                      </span>
                       <div className="flex flex-col items-center mt-1">
-                        <span className="text-[10px] uppercase font-bold text-slate-400">Total: ${(camp.totalBudget || 0).toLocaleString()}</span>
+                        {camp.type === 'daily' && (
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Total: ${(camp.totalBudget || 0).toLocaleString()}</span>
+                        )}
                         <span className="text-[10px] text-primary-500 font-bold">
                           {(() => {
                             const start = new Date(camp.startDate);
@@ -140,7 +149,7 @@ export default function CampaignsPage() {
                   </td>
                   <td className="px-6 py-4 text-center">
                     <span className="px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm font-bold">
-                      ${(camp.runningSpend || 0).toLocaleString()}
+                      ${(camp.runningSpend || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </td>
                   <td className="px-6 py-4">
