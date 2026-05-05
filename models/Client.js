@@ -16,7 +16,9 @@ const ClientSchema = new mongoose.Schema({
   totalSpent: { type: Number, default: 0 },
   totalLoaded: { type: Number, default: 0 },
   totalPaid: { type: Number, default: 0 },
-  balance: { type: Number, default: 0 },
+  balance: { type: Number, default: 0 }, // Legacy/Combined
+  contractDue: { type: Number, default: 0 },
+  walletBalance: { type: Number, default: 0 },
 }, { timestamps: true });
 
 export default mongoose.models.Client || mongoose.model('Client', ClientSchema);

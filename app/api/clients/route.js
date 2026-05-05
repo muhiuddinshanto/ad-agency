@@ -9,22 +9,11 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     await dbConnect();
-    const clients = await Client.find({});
     
-    const results = [];
-    for (const client of clients) {
-      const balanceData = await recalculateBalance(client._id);
-      const clientObj = client.toObject();
-      results.push({
-        ...clientObj,
-        ...balanceData
-      });
-    }
-    
-    // Sort by createdAt desc
-    results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
-    return NextResponse.json(results);
+    // STRICT READ-ONLY: Use cached values for performance.
+    // Balances are updated via recalculateBalance only on write operations.
+    const clients = await Client.find({}).sort({ createdAt: -1 });
+    return NextResponse.json(clients);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

@@ -97,15 +97,15 @@ export default function WalletPage() {
                     <p className="text-lg font-black text-green-600">${(client.totalPaid || 0).toLocaleString()}</p>
                   </div>
                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
-                    <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Balance</p>
-                    <p className={`text-lg font-black ${(client.balance || 0) < 0 ? 'text-red-600' : 'text-blue-600'}`}>
-                      ${(client.balance || 0).toLocaleString()}
+                    <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Wallet Balance</p>
+                    <p className={`text-lg font-black ${(client.walletBalance || 0) < 0 ? 'text-red-600' : 'text-primary-600'}`}>
+                      ${(client.walletBalance || 0).toLocaleString()}
                     </p>
                   </div>
                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Status</p>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${(client.balance || 0) >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      {(client.balance || 0) >= 0 ? 'Advance' : 'Due'}
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${(client.walletBalance || 0) >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700 animate-pulse'}`}>
+                      {(client.walletBalance || 0) >= 0 ? 'Credit' : 'Overdrawn'}
                     </span>
                   </div>
                 </div>

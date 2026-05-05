@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import ClientModal from '@/components/ClientModal';
 import LoadModal from '@/components/LoadModal';
-import { Plus, Search, Mail, Phone, Building2, Wallet, Activity, Hash, ArrowUpCircle } from 'lucide-react';
+import { Plus, Search, Mail, Phone, Building2, Wallet, Activity, Hash, ArrowUpCircle, Zap } from 'lucide-react';
 
 export default function ClientsPage() {
   const [clients, setClients] = useState([]);
@@ -110,8 +110,8 @@ export default function ClientsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${((client.totalSpent || 0) - (client.totalPaid || 0)) <= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700 animate-pulse'}`}>
-                    {((client.totalSpent || 0) - (client.totalPaid || 0)) <= 0 ? 'Advance' : 'Due'}
+                  <div className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${((client.totalBudget || 0) - (client.totalPaid || 0)) <= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700 animate-pulse'}`}>
+                    {((client.totalBudget || 0) - (client.totalPaid || 0)) <= 0 ? 'Advance' : 'Due'}
                   </div>
                 </div>
 
@@ -169,63 +169,73 @@ export default function ClientsPage() {
 
               {/* Right Side: Financial Summary */}
               <div className="lg:w-80 bg-slate-50/50 p-5 rounded-2xl space-y-4 border border-slate-100">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <Wallet className="w-4 h-4" />
-                    <span className="text-xs uppercase font-bold tracking-widest">Balance</span>
+                {/* 1. Contract Layer */}
+                <div>
+                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+                    <Activity className="w-3.5 h-3.5" />
+                    <span className="text-[10px] uppercase font-black tracking-widest">Contract Layer</span>
                   </div>
-                  <span className={`text-lg font-black ${(client.balance || 0) < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    ${(client.balance || 0).toLocaleString()}
-                  </span>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-500">Total Budget:</span>
+                      <span className="font-bold text-slate-900">${(client.totalBudget || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-500">Total Paid (USD):</span>
+                      <span className="font-bold text-green-600">${(client.totalPaid || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm pt-1 border-t border-slate-200/60 mt-1">
+                      <span className="text-slate-600 font-bold">Contract Due:</span>
+                      <span className={`font-black ${(client.contractDue || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        ${(client.contractDue || 0).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-3 pt-3 border-t border-slate-200/60">
-                  {client.serviceType === 'wallet' ? (
-                    <>
-                      <div className="flex justify-between items-center text-sm">
+                {/* 2. Live Spend Layer */}
+                <div className="pt-3 border-t border-slate-200/60">
+                  <div className="flex items-center gap-2 text-slate-400 mb-2">
+                    <Zap className="w-3.5 h-3.5" />
+                    <span className="text-[10px] uppercase font-black tracking-widest">Live Ad Spend</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm bg-orange-50 px-3 py-2 rounded-xl border border-orange-100">
+                    <span className="text-orange-600 font-bold">Actual Spend:</span>
+                    <span className="font-black text-orange-700">${(client.totalSpent || 0).toLocaleString()}</span>
+                  </div>
+                </div>
+
+                {/* 3. Wallet Layer (if wallet client) */}
+                {client.serviceType === 'wallet' && (
+                  <div className="pt-3 border-t border-slate-200/60">
+                    <div className="flex items-center gap-2 text-slate-400 mb-2">
+                      <Wallet className="w-3.5 h-3.5" />
+                      <span className="text-[10px] uppercase font-black tracking-widest">Wallet System</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center text-xs">
                         <span className="text-slate-500">Total Loaded:</span>
-                        <span className="font-bold text-slate-800">${(client.totalLoaded || 0).toLocaleString()}</span>
+                        <span className="font-bold text-slate-900">${(client.totalLoaded || 0).toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500">Total Paid (USD eq.):</span>
-                        <span className="font-bold text-green-600">${(client.totalPaid || 0).toLocaleString()}</span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500">Total Budget:</span>
-                        <span className="font-bold text-slate-900">${(client.totalBudget || 0).toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500">Total Paid (USD):</span>
-                        <span className="font-bold text-green-600">${(client.totalPaid || 0).toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500 font-medium">Running Spend:</span>
-                        <span className="font-bold text-orange-600">${(client.totalSpent || 0).toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm border-t border-slate-100 pt-2">
-                        <span className="text-slate-500 font-bold">Due Amount:</span>
-                        <span className={`font-black ${(client.totalSpent - client.totalPaid) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          ${((client.totalSpent || 0) - (client.totalPaid || 0)).toLocaleString()}
+                      <div className="flex justify-between items-center text-sm pt-1 border-t border-slate-200/60 mt-1">
+                        <span className="text-slate-600 font-bold">Wallet { (client.walletBalance || 0) < 0 ? 'Overdraft' : 'Credit' }:</span>
+                        <span className={`font-black ${(client.walletBalance || 0) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          ${Math.abs(client.walletBalance || 0).toLocaleString()}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-slate-500">Future Remaining:</span>
-                        <span className="font-bold text-blue-400">${(client.futureDue || 0).toLocaleString()}</span>
-                      </div>
-                    </>
-                  )}
-                  
-                  <div className="pt-3 flex items-center justify-between">
-                    <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded ${client.serviceType === 'wallet' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
-                      {client.serviceType === 'wallet' ? 'Wallet Service' : 'Campaign Service'}
-                    </span>
-                    <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded ${((client.totalSpent || 0) - (client.totalPaid || 0)) > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                      {((client.totalSpent || 0) - (client.totalPaid || 0)) > 0 ? 'Due Payment' : 'Credit Balance'}
-                    </span>
+                      {(client.walletBalance || 0) < 0 && (
+                        <div className="bg-red-50 text-red-600 text-[10px] font-bold text-center py-1 rounded-lg mt-1 animate-bounce">
+                          OVERDRAWN ACCOUNT
+                        </div>
+                      )}
+                    </div>
                   </div>
+                )}
+                
+                <div className="pt-2 flex items-center justify-between">
+                  <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded ${client.serviceType === 'wallet' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                    {client.serviceType === 'wallet' ? 'Wallet Service' : 'Campaign Service'}
+                  </span>
                 </div>
               </div>
             </div>

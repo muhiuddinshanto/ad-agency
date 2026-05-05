@@ -9,6 +9,9 @@ export default function Dashboard() {
     totalAdSpend: 0,
     todaySpend: 0,
     totalDue: 0,
+    totalCampaignBudget: 0,
+    totalRevenue: 0,
+    totalRunningSpend: 0,
     unpaidClients: []
   });
 
@@ -28,8 +31,21 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Dashboard Overview</h1>
-        <p className="text-slate-500">Welcome back! Here's what's happening today.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Financial Ledger</h1>
+            <p className="text-slate-500">Live accounting overview based on source truth.</p>
+          </div>
+          {stats.isSystemSynced === false && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl">
+              <AlertCircle className="w-5 h-5" />
+              <div className="flex flex-col">
+                <span className="text-xs font-bold uppercase tracking-wider">Sync Warning</span>
+                <span className="text-[10px]">Ledger mismatch detected. Contact Admin.</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -73,31 +89,31 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard 
-          title="Total Planned Budget" 
-          value={`$${(stats.totalPlannedBudget || 0).toLocaleString()}`} 
+          title="Total Budget" 
+          value={`$${(stats.totalCampaignBudget || 0).toLocaleString()}`} 
           icon={DollarSign} 
-          description="Total budget across all campaigns"
+          description="Sum of all Campaign budgets"
           color="blue"
         />
         <StatsCard 
-          title="Total Running Spend" 
+          title="Running Spend" 
           value={`$${(stats.totalRunningSpend || 0).toLocaleString()}`} 
           icon={Zap} 
-          description="Sum of all recorded daily spends"
+          description="Actual sum of DailySpend"
           color="orange"
         />
         <StatsCard 
-          title="Total Paid (USD)" 
-          value={`$${(stats.totalPaid || 0).toLocaleString()}`} 
+          title="Total Paid" 
+          value={`$${(stats.totalRevenue || 0).toLocaleString()}`} 
           icon={DollarSign} 
-          description="Total payments converted to USD"
+          description="Total locked USD collected"
           color="green"
         />
         <StatsCard 
-          title="Total Due" 
+          title="Total Outstanding Due" 
           value={`$${(stats.totalDue || 0).toLocaleString()}`} 
           icon={AlertCircle} 
-          description="Outstanding balance from clients"
+          description="Total (Spend - Paid) for all clients"
           color="red"
         />
       </div>
@@ -125,20 +141,21 @@ export default function Dashboard() {
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
           <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-red-500" />
-            Clients with Due Balance
+            Active Receivables
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-slate-100">
-                  <th className="pb-4 font-semibold text-slate-600">Client Name</th>
-                  <th className="pb-4 font-semibold text-slate-600 text-right">Balance</th>
+                  <th className="pb-4 font-semibold text-slate-600">Client</th>
+                  <th className="pb-4 font-semibold text-slate-600 text-center">Status</th>
+                  <th className="pb-4 font-semibold text-slate-600 text-right">Due (USD)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {(!stats.unpaidClients || stats.unpaidClients.length === 0) ? (
                   <tr>
-                    <td colSpan="2" className="py-8 text-center text-slate-400">All up to date!</td>
+                    <td colSpan="3" className="py-8 text-center text-slate-400">All up to date!</td>
                   </tr>
                 ) : (
                   stats.unpaidClients.map((client) => (
@@ -149,10 +166,24 @@ export default function Dashboard() {
                           <span className="text-xs text-slate-500">{client.companyName}</span>
                         </div>
                       </td>
+                      <td className="py-4 text-center">
+                        {client.isOverdrawn ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-red-100 text-red-600 animate-pulse">
+                            Overdrawn
+                          </span>
+                        ) : (
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${client.serviceType === 'wallet' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                            {client.serviceType === 'wallet' ? 'Wallet' : 'Campaign'}
+                          </span>
+                        )}
+                      </td>
                       <td className="py-4 text-right">
-                        <span className="px-3 py-1 bg-red-50 text-red-600 rounded-full text-sm font-bold">
-                          -${Math.abs(client.balance || 0).toLocaleString()}
-                        </span>
+                        <div className="flex flex-col items-end">
+                          <span className={`${client.isOverdrawn || client.dueUSD > 0 ? 'text-red-600' : 'text-slate-600'} font-bold`}>
+                            ${(client.dueUSD || 0).toLocaleString()}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium">৳{(client.dueBDT || 0).toLocaleString()}</span>
+                        </div>
                       </td>
                     </tr>
                   ))

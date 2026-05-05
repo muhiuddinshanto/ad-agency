@@ -15,8 +15,21 @@ export async function GET(req) {
 
     const activeCampaigns = await Campaign.find({ status: 'running' });
     const results = [];
+    const clientsToUpdate = new Set();
 
     for (const campaign of activeCampaigns) {
+      // Check if campaign has started and not ended
+      const start = new Date(campaign.startDate);
+      const end = new Date(campaign.endDate);
+      
+      // Use UTC normalized date for comparison
+      const todayUTC = new Date(dateStr);
+      
+      if (todayUTC < start || todayUTC > end) {
+        results.push({ campaign: campaign.name, status: 'skipped (not in date range)' });
+        continue;
+      }
+
       // Check if record exists for this campaign and today
       const existing = await DailySpend.findOne({
         campaign: campaign._id,
@@ -28,15 +41,6 @@ export async function GET(req) {
         continue;
       }
 
-      // Check if campaign has started and not ended
-      const start = new Date(campaign.startDate);
-      const end = new Date(campaign.endDate);
-      
-      if (today < start || today > end) {
-        results.push({ campaign: campaign.name, status: 'skipped (not in date range)' });
-        continue;
-      }
-
       // Calculate daily amount
       let dailyAmount = 0;
       if (campaign.type === 'daily') {
@@ -44,8 +48,8 @@ export async function GET(req) {
       } else {
         // Lifetime
         const durationInMs = Math.max(0, end.getTime() - start.getTime());
-        const totalDurationInDays = Math.ceil(durationInMs / (1000 * 60 * 60 * 24));
-        dailyAmount = totalDurationInDays > 0 ? campaign.totalBudget / totalDurationInDays : 0;
+        const totalDurationInDays = Math.max(1, Math.ceil(durationInMs / (1000 * 60 * 60 * 24)));
+        dailyAmount = campaign.totalBudget / totalDurationInDays;
       }
 
       // Create record
@@ -56,10 +60,13 @@ export async function GET(req) {
         amount: dailyAmount
       });
 
-      // Recalculate client balance
-      await recalculateBalance(campaign.client);
-
+      clientsToUpdate.add(campaign.client.toString());
       results.push({ campaign: campaign.name, status: 'created', amount: dailyAmount });
+    }
+
+    // Recalculate balances only once per client
+    for (const clientId of clientsToUpdate) {
+      await recalculateBalance(clientId);
     }
 
     return NextResponse.json({ success: true, results });
