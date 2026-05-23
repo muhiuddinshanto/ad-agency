@@ -8,6 +8,7 @@ import { Menu, X } from 'lucide-react';
 export default function AppLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const isAuthPage = pathname === '/login';
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);
@@ -28,6 +29,10 @@ export default function AppLayout({ children }) {
       document.body.style.overflow = 'unset';
     };
   }, [isSidebarOpen]);
+
+  if (isAuthPage) {
+    return children;
+  }
 
   return (
     <div className="flex min-h-screen relative">

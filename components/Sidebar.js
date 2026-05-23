@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Megaphone, ReceiptText, TrendingUp, X, Wallet } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { LayoutDashboard, Users, Megaphone, ReceiptText, TrendingUp, X, Wallet, LogOut } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -18,6 +19,23 @@ const navigation = [
 
 export default function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => setUser(data))
+      .catch(() => setUser(null));
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login';
+  };
+
+  const visibleNavigation = user?.role === 'accountant'
+    ? navigation.filter((item) => item.href === '/transactions')
+    : navigation;
 
   return (
     <div className={cn(
@@ -38,7 +56,7 @@ export default function Sidebar({ isOpen, onClose }) {
       </div>
       
       <nav className="flex-1 px-4 space-y-2">
-        {navigation.map((item) => {
+        {visibleNavigation.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link
@@ -67,10 +85,17 @@ export default function Sidebar({ isOpen, onClose }) {
           <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-xs font-bold">
             EA
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">Admin User</span>
-            <span className="text-xs text-slate-500">Agency Owner</span>
+          <div className="flex flex-col flex-1 min-w-0">
+            <span className="text-sm font-medium truncate">{user?.name || 'Admin User'}</span>
+            <span className="text-xs text-slate-500 capitalize">{user?.role || 'admin'}</span>
           </div>
+          <button
+            onClick={handleLogout}
+            className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+            title="Logout"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>

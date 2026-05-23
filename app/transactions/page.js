@@ -2,11 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import TransactionModal from '@/components/TransactionModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { Plus, Search, ArrowUpRight, Receipt, User, Trash2, Banknote, Globe } from 'lucide-react';
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteTransactionId, setDeleteTransactionId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchTransactions = async () => {
@@ -26,6 +30,10 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     fetchTransactions();
+    fetch('/api/auth/me')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => setCurrentUser(data))
+      .catch(() => setCurrentUser(null));
   }, []);
 
   const filteredTransactions = Array.isArray(transactions) ? transactions.filter(t => 
@@ -33,15 +41,21 @@ export default function TransactionsPage() {
     t.note?.toLowerCase().includes(searchQuery.toLowerCase())
   ) : [];
 
-  const handleDelete = async (id) => {
-    if (confirm('Are you sure you want to delete this transaction? This will update the client balance.')) {
-      try {
-        const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error('Failed to delete transaction');
-        setTransactions(transactions.filter(t => t._id !== id));
-      } catch (error) {
-        alert(error.message);
+  const confirmDelete = async () => {
+    if (!deleteTransactionId) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/transactions/${deleteTransactionId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete transaction');
       }
+      setTransactions(transactions.filter(t => t._id !== deleteTransactionId));
+      setDeleteTransactionId(null);
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -127,14 +141,16 @@ export default function TransactionsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button 
-                        onClick={() => handleDelete(t._id)}
-                        className="text-slate-400 hover:text-red-600 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
+                    {currentUser?.role !== 'accountant' && (
+                      <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => setDeleteTransactionId(t._id)}
+                          className="text-slate-400 hover:text-red-600 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -152,6 +168,16 @@ export default function TransactionsPage() {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         onSuccess={fetchTransactions} 
+      />
+
+      <ConfirmationModal
+        isOpen={Boolean(deleteTransactionId)}
+        title="Delete transaction?"
+        message="This payment record will be deleted and the client balance will be recalculated."
+        confirmLabel="Delete Transaction"
+        loading={isDeleting}
+        onCancel={() => setDeleteTransactionId(null)}
+        onConfirm={confirmDelete}
       />
     </div>
   );

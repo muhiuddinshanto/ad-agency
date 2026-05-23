@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import ClientModal from '@/components/ClientModal';
 import LoadModal from '@/components/LoadModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { Plus, Search, Mail, Phone, Building2, Wallet, Activity, Hash, ArrowUpCircle, Zap } from 'lucide-react';
 
 export default function ClientsPage() {
@@ -11,6 +12,8 @@ export default function ClientsPage() {
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [loadClientId, setLoadClientId] = useState(null);
+  const [deleteClientId, setDeleteClientId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchClients = async () => {
@@ -47,15 +50,21 @@ export default function ClientsPage() {
     setIsLoadModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (confirm('Are you sure you want to delete this client? This will also delete their campaigns and transactions.')) {
-      try {
-        const res = await fetch(`/api/clients/${id}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error('Failed to delete client');
-        setClients(clients.filter(c => c._id !== id));
-      } catch (error) {
-        alert(error.message);
+  const confirmDelete = async () => {
+    if (!deleteClientId) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/clients/${deleteClientId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete client');
       }
+      setClients(clients.filter(c => c._id !== deleteClientId));
+      setDeleteClientId(null);
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -69,7 +78,7 @@ export default function ClientsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Clients</h1>
-          <p className="text-slate-500">Manage your agency's client relationships.</p>
+          <p className="text-slate-500">Manage your agency&apos;s client relationships.</p>
         </div>
         <button 
           onClick={openAddModal}
@@ -159,7 +168,7 @@ export default function ClientsPage() {
                     Edit
                   </button>
                   <button 
-                    onClick={() => handleDelete(client._id)}
+                    onClick={() => setDeleteClientId(client._id)}
                     className="flex-1 py-2 min-h-[44px] text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all flex items-center justify-center"
                   >
                     Delete
@@ -255,6 +264,16 @@ export default function ClientsPage() {
         onClose={() => setIsLoadModalOpen(false)} 
         onSuccess={fetchClients} 
         initialClientId={loadClientId}
+      />
+
+      <ConfirmationModal
+        isOpen={Boolean(deleteClientId)}
+        title="Delete client?"
+        message="This will delete the client and their related campaigns and transactions. This action cannot be undone."
+        confirmLabel="Delete Client"
+        loading={isDeleting}
+        onCancel={() => setDeleteClientId(null)}
+        onConfirm={confirmDelete}
       />
     </div>
   );

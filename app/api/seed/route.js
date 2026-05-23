@@ -3,9 +3,15 @@ import dbConnect from '@/lib/mongodb';
 import Client from '@/models/Client';
 import Campaign from '@/models/Campaign';
 import Transaction from '@/models/Transaction';
+import { requireRole } from '@/lib/permissions';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    const auth = await requireRole(['owner']);
+    if (auth.response) return auth.response;
+
     await dbConnect();
 
     // Clear existing data

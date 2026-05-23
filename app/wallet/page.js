@@ -162,7 +162,7 @@ export default function WalletPage() {
             </div>
             <h2 className="text-xl font-bold text-slate-900">No Wallet Clients</h2>
             <p className="text-slate-500 max-w-xs mx-auto mt-2">
-              Only clients with service type "wallet" will appear here.
+              Only clients with service type &quot;wallet&quot; will appear here.
             </p>
           </div>
         )}

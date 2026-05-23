@@ -4,11 +4,17 @@ import Client from '@/models/Client';
 import Campaign from '@/models/Campaign';
 import Transaction from '@/models/Transaction';
 import { recalculateBalance } from '@/lib/balance';
+import { requireRole } from '@/lib/permissions';
+import { clientSchema, formatZodError } from '@/lib/validators';
+import { logAudit } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req, { params }) {
   try {
+    const auth = await requireRole(['owner', 'admin', 'accountant']);
+    if (auth.response) return auth.response;
+
     await dbConnect();
     const client = await Client.findById(params.id);
     if (!client) return NextResponse.json({ error: 'Client not found' }, { status: 404 });
@@ -22,30 +28,39 @@ export async function GET(req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
+    const auth = await requireRole(['owner', 'admin']);
+    if (auth.response) return auth.response;
+
     await dbConnect();
     const body = await req.json();
+    const parsed = clientSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: formatZodError(parsed.error) }, { status: 400 });
+    }
     
     const client = await Client.findById(params.id);
     if (!client) return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    const oldClient = client.toObject();
 
     // Update basic fields
-    if (body.name) client.name = body.name;
-    if (body.email) client.email = body.email;
-    if (body.phone) client.phone = body.phone;
-    if (body.companyName) client.companyName = body.companyName;
-    if (body.ratePerDollar) client.ratePerDollar = body.ratePerDollar;
-    if (body.serviceType) client.serviceType = body.serviceType;
+    client.name = parsed.data.name;
+    client.email = parsed.data.email;
+    client.phone = parsed.data.phone;
+    client.companyName = parsed.data.companyName;
+    client.ratePerDollar = parsed.data.ratePerDollar;
+    client.serviceType = parsed.data.serviceType;
     
-    if (body.rates) {
-      client.rates = {
-        Facebook: body.rates.Facebook || client.rates?.Facebook || 120,
-        Google: body.rates.Google || client.rates?.Google || 120,
-        TikTok: body.rates.TikTok || client.rates?.TikTok || 120
-      };
-    }
+    client.rates = parsed.data.rates;
 
     await client.save();
     const balanceData = await recalculateBalance(client._id);
+    await logAudit({
+      action: 'CLIENT_UPDATE',
+      session: auth.session,
+      targetId: client._id,
+      oldValues: oldClient,
+      newValues: client,
+    });
     
     return NextResponse.json({
       ...client.toObject(),
@@ -58,6 +73,9 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
+    const auth = await requireRole(['owner', 'admin']);
+    if (auth.response) return auth.response;
+
     await dbConnect();
     const client = await Client.findByIdAndDelete(params.id);
     if (!client) return NextResponse.json({ error: 'Client not found' }, { status: 404 });
@@ -65,6 +83,12 @@ export async function DELETE(req, { params }) {
     // Optional: Clean up related campaigns and transactions
     await Campaign.deleteMany({ client: params.id });
     await Transaction.deleteMany({ client: params.id });
+    await logAudit({
+      action: 'CLIENT_DELETE',
+      session: auth.session,
+      targetId: params.id,
+      oldValues: client,
+    });
     
     return NextResponse.json({ message: 'Client deleted successfully' });
   } catch (error) {

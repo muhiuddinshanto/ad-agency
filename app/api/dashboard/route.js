@@ -5,11 +5,15 @@ import Campaign from '@/models/Campaign';
 import DailySpend from '@/models/DailySpend';
 
 import { recalculateBalance } from '@/lib/balance';
+import { requireRole } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    const auth = await requireRole(['owner', 'admin']);
+    if (auth.response) return auth.response;
+
     await dbConnect();
     
     // STRICT READ-ONLY: We do not call recalculateBalance or reconcileClientFinance here.
@@ -28,20 +32,24 @@ export async function GET() {
     // 4. Total Due (Based on ledger: Spend - Paid)
     const unpaidClients = clients.map(client => {
       const isWallet = client.serviceType === 'wallet';
-      const dueUSD = client.contractDue || 0; // Cached as Spend - Paid in recalculateBalance
+      const dueUSD = client.contractDue || 0; // Budget - Paid
+      const walletBal = client.walletBalance || 0;
+      const isOverdrawn = isWallet && walletBal < 0;
       
-      // Calculate BDT equivalent using client's rate (Facebook rate as default)
+      // Calculate BDT equivalent
       const rate = client.rates?.Facebook || client.ratePerDollar || 120;
-      const dueBDT = dueUSD * rate;
+      
+      // For wallet clients, the 'Due' is the absolute overdraft amount if overdrawn
+      // Otherwise, use budget-based due for campaign clients
+      const displayDue = isWallet ? (isOverdrawn ? Math.abs(walletBal) : 0) : Math.max(0, dueUSD);
       
       return {
         ...client.toObject(),
-        dueUSD,
-        dueBDT,
-        displayDue: dueUSD,
-        isOverdrawn: isWallet && (client.walletBalance < 0)
+        dueUSD: displayDue,
+        dueBDT: displayDue * rate,
+        isOverdrawn
       };
-    }).filter(c => c.dueUSD > 0 || c.isOverdrawn);
+    }).filter(c => c.dueUSD > 0);
 
     const totalDue = unpaidClients.reduce((sum, client) => sum + Math.max(0, client.dueUSD), 0);
     

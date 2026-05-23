@@ -177,6 +177,7 @@ export default function ClientModal({ isOpen, onClose, onSuccess, client = null 
               <input
                 required
                 type="number"
+                min="0.01"
                 step="0.1"
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-500"
                 value={formData.rates.Facebook}
@@ -188,6 +189,7 @@ export default function ClientModal({ isOpen, onClose, onSuccess, client = null 
               <input
                 required
                 type="number"
+                min="0.01"
                 step="0.1"
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-500"
                 value={formData.rates.Google}
@@ -199,6 +201,7 @@ export default function ClientModal({ isOpen, onClose, onSuccess, client = null 
               <input
                 required
                 type="number"
+                min="0.01"
                 step="0.1"
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-500"
                 value={formData.rates.TikTok}

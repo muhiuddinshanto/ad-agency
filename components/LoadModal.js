@@ -80,6 +80,7 @@ export default function LoadModal({ isOpen, onClose, onSuccess, initialClientId 
           <input
             required
             type="number"
+            min="0.01"
             step="0.01"
             className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
             placeholder="e.g. 1000"

@@ -3,9 +3,27 @@ import dbConnect from '@/lib/mongodb';
 import Campaign from '@/models/Campaign';
 import DailySpend from '@/models/DailySpend';
 import { recalculateBalance } from '@/lib/balance';
+import { requireRole } from '@/lib/permissions';
+import { logAudit } from '@/lib/audit';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req) {
   try {
+    // Check for Cron Secret bypass
+    const url = new URL(req.url);
+    const secretParam = url.searchParams.get('secret');
+    const authHeader = req.headers.get('authorization');
+    const cronSecret = process.env.CRON_SECRET;
+
+    let auth = null;
+    if (cronSecret && (secretParam === cronSecret || authHeader === `Bearer ${cronSecret}`)) {
+      auth = { session: { email: 'cron@system.local', role: 'owner' } };
+    } else {
+      auth = await requireRole(['owner', 'admin']);
+      if (auth.response) return auth.response;
+    }
+
     await dbConnect();
     
     // Get current date string YYYY-MM-DD
@@ -68,6 +86,11 @@ export async function GET(req) {
     for (const clientId of clientsToUpdate) {
       await recalculateBalance(clientId);
     }
+    await logAudit({
+      action: 'DAILY_SPEND_TRACKER_RUN',
+      session: auth.session,
+      newValues: { results },
+    });
 
     return NextResponse.json({ success: true, results });
   } catch (error) {

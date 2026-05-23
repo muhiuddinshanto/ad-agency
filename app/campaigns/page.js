@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import CampaignModal from '@/components/CampaignModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { Plus, Search, Calendar, Target, PlayCircle, PauseCircle, TrendingUp, DollarSign } from 'lucide-react';
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [deleteCampaignId, setDeleteCampaignId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchCampaigns = async () => {
@@ -41,15 +44,21 @@ export default function CampaignsPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (confirm('Are you sure you want to delete this campaign?')) {
-      try {
-        const res = await fetch(`/api/campaigns/${id}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error('Failed to delete campaign');
-        setCampaigns(campaigns.filter(c => c._id !== id));
-      } catch (error) {
-        alert(error.message);
+  const confirmDelete = async () => {
+    if (!deleteCampaignId) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/campaigns/${deleteCampaignId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete campaign');
       }
+      setCampaigns(campaigns.filter(c => c._id !== deleteCampaignId));
+      setDeleteCampaignId(null);
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -170,7 +179,7 @@ export default function CampaignsPage() {
                         Manage
                       </button>
                       <button 
-                        onClick={() => handleDelete(camp._id)}
+                        onClick={() => setDeleteCampaignId(camp._id)}
                         className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                       >
                         Delete
@@ -194,6 +203,16 @@ export default function CampaignsPage() {
         onClose={() => setIsModalOpen(false)} 
         onSuccess={fetchCampaigns} 
         campaign={selectedCampaign}
+      />
+
+      <ConfirmationModal
+        isOpen={Boolean(deleteCampaignId)}
+        title="Delete campaign?"
+        message="This campaign will be removed and the client balance will be recalculated."
+        confirmLabel="Delete Campaign"
+        loading={isDeleting}
+        onCancel={() => setDeleteCampaignId(null)}
+        onConfirm={confirmDelete}
       />
     </div>
   );
