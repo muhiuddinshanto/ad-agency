@@ -5,7 +5,7 @@ import Campaign from '@/models/Campaign';
 import DailySpend from '@/models/DailySpend';
 
 import { recalculateBalance } from '@/lib/balance';
-import { backfillActiveCampaignsThroughDate } from '@/lib/dailySpend';
+import { backfillActiveCampaignsThroughDate, getBusinessDateKey } from '@/lib/dailySpend';
 import { requireRole } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
@@ -61,8 +61,8 @@ export async function GET() {
     const totalDue = unpaidClients.reduce((sum, client) => sum + Math.max(0, client.dueUSD), 0);
     
     // Daily Spend Stats
-    const todayStr = new Date().toISOString().split('T')[0];
-    const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const todayStr = getBusinessDateKey(new Date());
+    const yesterdayStr = getBusinessDateKey(new Date(Date.now() - 86400000));
     
     const todaySpend = await DailySpend.aggregate([
       { $match: { date: new Date(todayStr) } },
