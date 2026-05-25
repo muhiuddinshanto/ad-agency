@@ -8,6 +8,14 @@ import { logAudit } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
+function getInclusiveDurationInDays(startDate, endDate) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const startUTC = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+  const endUTC = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
+  return Math.max(1, Math.floor((endUTC - startUTC) / (1000 * 60 * 60 * 24)) + 1);
+}
+
 export async function GET(req) {
   try {
     // Check for Cron Secret bypass
@@ -74,8 +82,7 @@ export async function GET(req) {
         dailyAmount = campaign.dailyBudget;
       } else {
         // Lifetime
-        const durationInMs = Math.max(0, end.getTime() - start.getTime());
-        const totalDurationInDays = Math.max(1, Math.ceil(durationInMs / (1000 * 60 * 60 * 24)));
+        const totalDurationInDays = getInclusiveDurationInDays(start, end);
         dailyAmount = campaign.totalBudget / totalDurationInDays;
       }
 

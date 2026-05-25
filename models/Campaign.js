@@ -14,14 +14,18 @@ const CampaignSchema = new mongoose.Schema({
   manualSpendOverride: { type: Number },
 }, { timestamps: true });
 
+function getInclusiveDurationInDays(startDate, endDate) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const startUTC = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+  const endUTC = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
+  return Math.max(1, Math.floor((endUTC - startUTC) / (1000 * 60 * 60 * 24)) + 1);
+}
+
 // Pre-save hook to calculate budgets
 CampaignSchema.pre('save', function(next) {
   if (this.startDate && this.endDate) {
-    const start = new Date(this.startDate);
-    const end = new Date(this.endDate);
-    
-    const durationInMs = Math.max(0, end.getTime() - start.getTime());
-    const durationInDays = durationInMs / (1000 * 60 * 60 * 24);
+    const durationInDays = getInclusiveDurationInDays(this.startDate, this.endDate);
 
     if (this.type === 'daily') {
       this.totalBudget = (this.dailyBudget || 0) * durationInDays;

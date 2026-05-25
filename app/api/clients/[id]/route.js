@@ -3,6 +3,8 @@ import dbConnect from '@/lib/mongodb';
 import Client from '@/models/Client';
 import Campaign from '@/models/Campaign';
 import Transaction from '@/models/Transaction';
+import Load from '@/models/Load';
+import DailySpend from '@/models/DailySpend';
 import { recalculateBalance } from '@/lib/balance';
 import { requireRole } from '@/lib/permissions';
 import { clientSchema, formatZodError } from '@/lib/validators';
@@ -80,9 +82,11 @@ export async function DELETE(req, { params }) {
     const client = await Client.findByIdAndDelete(params.id);
     if (!client) return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     
-    // Optional: Clean up related campaigns and transactions
+    // Keep all source collections in sync when a client is removed.
     await Campaign.deleteMany({ client: params.id });
     await Transaction.deleteMany({ client: params.id });
+    await Load.deleteMany({ client: params.id });
+    await DailySpend.deleteMany({ client: params.id });
     await logAudit({
       action: 'CLIENT_DELETE',
       session: auth.session,

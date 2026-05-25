@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Campaign from '@/models/Campaign';
+import DailySpend from '@/models/DailySpend';
 import { recalculateBalance } from '@/lib/balance';
 import { requireRole } from '@/lib/permissions';
 import { campaignSchema, formatZodError } from '@/lib/validators';
@@ -69,6 +70,7 @@ export async function DELETE(req, { params }) {
     
     const clientId = campaign.client;
     await Campaign.findByIdAndDelete(params.id);
+    await DailySpend.deleteMany({ campaign: params.id });
     
     // Auto update client balance
     await recalculateBalance(clientId);
