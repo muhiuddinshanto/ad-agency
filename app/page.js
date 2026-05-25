@@ -14,37 +14,174 @@ export default function Dashboard() {
     totalRunningSpend: 0,
     unpaidClients: []
   });
+  const [refreshInterval, setRefreshInterval] = useState(30000); // default 30s
+  const [secondsLeft, setSecondsLeft] = useState(30);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [trackingDate, setTrackingDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [customValue, setCustomValue] = useState(30);
+  const [customUnit, setCustomUnit] = useState('s'); // 's' | 'm' | 'h'
 
+  const unitMultiplier = { s: 1000, m: 60000, h: 3600000 };
+
+  const applyCustomInterval = (val, unit) => {
+    const ms = Math.max(0, Math.round(val * (unitMultiplier[unit] || 1000)));
+    setRefreshInterval(ms);
+    localStorage.setItem('dashboard-refresh-interval', ms.toString());
+    localStorage.setItem('dashboard-refresh-value', val.toString());
+    localStorage.setItem('dashboard-refresh-unit', unit);
+  };
+
+  const formatCountdown = (totalSeconds) => {
+    if (totalSeconds <= 0) return 'Off';
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = Math.round(totalSeconds % 60);
+    if (h > 0) return `${h}h ${m}m ${s}s`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  };
+
+  const fetchStats = async () => {
+    setIsRefreshing(true);
+    try {
+      const res = await fetch('/api/dashboard');
+      const data = await res.json();
+      if (data && !data.error) {
+        setStats(data);
+      } else {
+        console.error(data?.error || 'Failed to fetch stats');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Load saved interval preference
   useEffect(() => {
-    fetch('/api/dashboard')
-      .then(res => res.json())
-      .then(data => {
-        if (data && !data.error) {
-          setStats(data);
-        } else {
-          console.error(data?.error || 'Failed to fetch stats');
-        }
-      })
-      .catch(err => console.error(err));
+    const savedMs = localStorage.getItem('dashboard-refresh-interval');
+    const savedVal = localStorage.getItem('dashboard-refresh-value');
+    const savedUnit = localStorage.getItem('dashboard-refresh-unit');
+    if (savedMs !== null) setRefreshInterval(parseInt(savedMs, 10));
+    if (savedVal !== null) setCustomValue(parseFloat(savedVal));
+    if (savedUnit !== null) setCustomUnit(savedUnit);
   }, []);
+
+  // Fetch initial data
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  // Handle the automatic timer and refresh
+  useEffect(() => {
+    if (refreshInterval <= 0) {
+      setSecondsLeft(0);
+      return;
+    }
+
+    setSecondsLeft(refreshInterval / 1000);
+
+    const timer = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          fetchStats();
+          return refreshInterval / 1000;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [refreshInterval]);
 
   return (
     <div className="space-y-8">
       <div>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Financial Ledger</h1>
+            <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+              Financial Ledger
+              {isRefreshing && (
+                <Activity className="w-5 h-5 text-primary-500 animate-spin" />
+              )}
+            </h1>
             <p className="text-slate-500">Live accounting overview based on source truth.</p>
           </div>
-          {stats.isSystemSynced === false && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl">
-              <AlertCircle className="w-5 h-5" />
-              <div className="flex flex-col">
-                <span className="text-xs font-bold uppercase tracking-wider">Sync Warning</span>
-                <span className="text-[10px]">Ledger mismatch detected. Contact Admin.</span>
+
+          <div className="flex flex-wrap items-center gap-3">
+            {stats.isSystemSynced === false && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl">
+                <AlertCircle className="w-4 h-4" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Sync Warning</span>
+                  <span className="text-[9px]">Ledger mismatch. Contact Admin.</span>
+                </div>
               </div>
+            )}
+
+            <div className="bg-white px-3 py-2 rounded-xl border border-slate-100 shadow-sm flex items-center gap-3 text-xs text-slate-600">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${refreshInterval > 0 ? 'bg-green-400' : 'bg-slate-400'} opacity-75`}></span>
+                  <span className={`relative inline-flex rounded-full h-2 w-2 ${refreshInterval > 0 ? 'bg-green-500' : 'bg-slate-500'}`}></span>
+                </span>
+                <span className="font-medium text-slate-700">
+                  {refreshInterval > 0 ? formatCountdown(secondsLeft) : 'Off'}
+                </span>
+              </div>
+
+              <div className="h-4 w-[1px] bg-slate-200" />
+
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={customValue}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value) || 0;
+                  setCustomValue(v);
+                  applyCustomInterval(v, customUnit);
+                }}
+                className="w-14 bg-slate-50 border border-slate-200 outline-none text-slate-700 font-bold py-1 px-2 rounded-lg text-center focus:ring-2 focus:ring-primary-500"
+              />
+              <select
+                value={customUnit}
+                onChange={(e) => {
+                  setCustomUnit(e.target.value);
+                  applyCustomInterval(customValue, e.target.value);
+                }}
+                className="bg-slate-50 border border-slate-200 outline-none text-slate-700 font-medium py-1 px-2 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors"
+              >
+                <option value="s">Seconds</option>
+                <option value="m">Minutes</option>
+                <option value="h">Hours</option>
+              </select>
+
+              <button
+                onClick={() => { setCustomValue(0); applyCustomInterval(0, customUnit); }}
+                className={`px-2 py-1 rounded-lg font-medium transition-all ${
+                  refreshInterval === 0
+                    ? 'bg-red-100 text-red-600'
+                    : 'text-slate-400 hover:bg-red-50 hover:text-red-500'
+                }`}
+                title="Stop Auto-Refresh"
+              >
+                Stop
+              </button>
+
+              <button
+                onClick={fetchStats}
+                disabled={isRefreshing}
+                className={`p-1 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-900 transition-all ${
+                  isRefreshing ? 'animate-spin' : ''
+                }`}
+                title="Sync Now"
+              >
+                <Activity className="w-4 h-4" />
+              </button>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -63,26 +200,37 @@ export default function Dashboard() {
           description="Total ad spend recorded yesterday"
           color="blue"
         />
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-center items-center gap-4 group hover:border-primary-200 transition-all">
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between items-center gap-4 group hover:border-primary-200 transition-all">
           <div className="text-center">
             <p className="text-sm font-medium text-slate-500 mb-1">Manual Update</p>
             <h3 className="text-lg font-bold text-slate-900">Daily Tracking</h3>
           </div>
+          
+          <div className="w-full flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold text-slate-400">Select Target Date</label>
+            <input 
+              type="date" 
+              value={trackingDate} 
+              onChange={(e) => setTrackingDate(e.target.value)}
+              className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none font-medium text-slate-700 bg-slate-50"
+            />
+          </div>
+
           <button 
             onClick={async () => {
-              const res = await fetch('/api/cron/daily-spend');
+              const res = await fetch(`/api/cron/daily-spend?date=${trackingDate}`);
               const data = await res.json();
               if (data.success) {
-                alert('Daily spend tracking updated successfully!');
+                alert(`Daily spend tracking updated successfully for ${trackingDate}!`);
                 window.location.reload();
               } else {
                 alert('Error: ' + data.error);
               }
             }}
-            className="w-full py-2 bg-primary-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-700 transition-all"
+            className="w-full py-2 bg-primary-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-700 transition-all text-xs"
           >
             <Activity className="w-4 h-4" />
-            Run Tracker Now
+            Run Tracker
           </button>
         </div>
       </div>

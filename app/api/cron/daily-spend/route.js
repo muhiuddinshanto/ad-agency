@@ -26,9 +26,18 @@ export async function GET(req) {
 
     await dbConnect();
     
-    // Get current date string YYYY-MM-DD
-    const today = new Date();
-    const dateStr = today.toISOString().split('T')[0];
+    // Get custom date or default to today YYYY-MM-DD
+    const customDateParam = url.searchParams.get('date');
+    let targetDate = new Date();
+    
+    if (customDateParam) {
+      const parsedDate = new Date(customDateParam);
+      if (!isNaN(parsedDate.getTime())) {
+        targetDate = parsedDate;
+      }
+    }
+    
+    const dateStr = targetDate.toISOString().split('T')[0];
     const startOfToday = new Date(dateStr);
 
     const activeCampaigns = await Campaign.find({ status: 'running' });

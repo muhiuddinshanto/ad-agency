@@ -11,6 +11,7 @@ const CampaignSchema = new mongoose.Schema({
   status: { type: String, enum: ['running', 'paused'], default: 'running' },
   totalBudget: { type: Number, default: 0 },
   runningSpend: { type: Number, default: 0 },
+  manualSpendOverride: { type: Number },
 }, { timestamps: true });
 
 // Pre-save hook to calculate budgets

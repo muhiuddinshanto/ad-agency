@@ -20,21 +20,42 @@ export async function POST(req) {
 
     await dbConnect();
 
-    let user = await User.findOne({ email: email?.toLowerCase(), isActive: true });
-    const userCount = await User.countDocuments();
+    let user = await User.findOne({ email: email?.toLowerCase() });
 
-    if (!user && userCount === 0 && email === auth.email && password === auth.password) {
-      const passwordData = hashPassword(auth.password);
-      user = await User.create({
-        email: auth.email,
-        name: 'Owner',
-        role: 'owner',
-        passwordHash: passwordData.hash,
-        passwordSalt: passwordData.salt,
-      });
+    if (email?.toLowerCase() === auth.email.toLowerCase() && password === auth.password) {
+      if (!user) {
+        const passwordData = hashPassword(auth.password);
+        user = await User.create({
+          email: auth.email,
+          name: 'Owner',
+          role: 'owner',
+          passwordHash: passwordData.hash,
+          passwordSalt: passwordData.salt,
+          isActive: true,
+        });
+      } else {
+        let modified = false;
+        if (!user.isActive) {
+          user.isActive = true;
+          modified = true;
+        }
+        if (user.role !== 'owner' && user.role !== 'admin') {
+          user.role = 'owner';
+          modified = true;
+        }
+        if (!verifyPassword(password, user.passwordSalt, user.passwordHash)) {
+          const passwordData = hashPassword(auth.password);
+          user.passwordHash = passwordData.hash;
+          user.passwordSalt = passwordData.salt;
+          modified = true;
+        }
+        if (modified) {
+          await user.save();
+        }
+      }
     }
 
-    if (!user || !verifyPassword(password, user.passwordSalt, user.passwordHash)) {
+    if (!user || !user.isActive || !verifyPassword(password, user.passwordSalt, user.passwordHash)) {
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
     }
 

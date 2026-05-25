@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = null }) {
   const [loading, setLoading] = useState(false);
   const [clients, setClients] = useState([]);
-  const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState({
     name: campaign?.name || '',
     client: campaign?.client?._id || campaign?.client || '',
     platform: campaign?.platform || 'Facebook',
@@ -16,10 +16,11 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
     totalBudget: campaign?.totalBudget || '',
     startDate: campaign?.startDate ? new Date(campaign.startDate).toISOString().slice(0, 16) : '',
     endDate: campaign?.endDate ? new Date(campaign.endDate).toISOString().slice(0, 16) : '',
-    status: campaign?.status || 'running'
+    status: campaign?.status || 'running',
+    manualSpendOverride: campaign?.manualSpendOverride !== undefined && campaign?.manualSpendOverride !== null ? campaign.manualSpendOverride : ''
   });
 
-  useEffect(() => {
+    useEffect(() => {
     if (campaign) {
       setFormData({
         name: campaign.name,
@@ -30,7 +31,8 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
         totalBudget: campaign.totalBudget,
         startDate: new Date(campaign.startDate).toISOString().slice(0, 16),
         endDate: new Date(campaign.endDate).toISOString().slice(0, 16),
-        status: campaign.status
+        status: campaign.status,
+        manualSpendOverride: campaign.manualSpendOverride !== undefined && campaign.manualSpendOverride !== null ? campaign.manualSpendOverride : ''
       });
     } else {
       setFormData({
@@ -42,7 +44,8 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
         totalBudget: '',
         startDate: '',
         endDate: '',
-        status: 'running'
+        status: 'running',
+        manualSpendOverride: ''
       });
     }
   }, [campaign]);
@@ -250,17 +253,31 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
           </div>
         )}
         
-        {campaign && (
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
-            <select
-              className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-            >
-              <option value="running">Running</option>
-              <option value="paused">Paused</option>
-            </select>
+                {campaign && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+              <select
+                className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              >
+                <option value="running">Running</option>
+                <option value="paused">Paused</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Manual Spend Override (USD)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                placeholder="Leave empty for auto-track"
+                value={formData.manualSpendOverride || ''}
+                onChange={(e) => setFormData({ ...formData, manualSpendOverride: e.target.value !== '' ? parseFloat(e.target.value) : '' })}
+              />
+            </div>
           </div>
         )}
 
