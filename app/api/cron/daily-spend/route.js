@@ -1,20 +1,11 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
-import Campaign from '@/models/Campaign';
-import DailySpend from '@/models/DailySpend';
 import { recalculateBalance } from '@/lib/balance';
+import { backfillAllActiveCampaigns } from '@/lib/dailySpend';
 import { requireRole } from '@/lib/permissions';
 import { logAudit } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
-
-function getInclusiveDurationInDays(startDate, endDate) {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const startUTC = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
-  const endUTC = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
-  return Math.max(1, Math.floor((endUTC - startUTC) / (1000 * 60 * 60 * 24)) + 1);
-}
 
 export async function GET(req) {
   try {
@@ -45,58 +36,7 @@ export async function GET(req) {
       }
     }
     
-    const dateStr = targetDate.toISOString().split('T')[0];
-    const startOfToday = new Date(dateStr);
-
-    const activeCampaigns = await Campaign.find({ status: 'running' });
-    const results = [];
-    const clientsToUpdate = new Set();
-
-    for (const campaign of activeCampaigns) {
-      // Check if campaign has started and not ended
-      const start = new Date(campaign.startDate);
-      const end = new Date(campaign.endDate);
-      
-      // Use UTC normalized date for comparison
-      const todayUTC = new Date(dateStr);
-      
-      if (todayUTC < start || todayUTC > end) {
-        results.push({ campaign: campaign.name, status: 'skipped (not in date range)' });
-        continue;
-      }
-
-      // Check if record exists for this campaign and today
-      const existing = await DailySpend.findOne({
-        campaign: campaign._id,
-        date: startOfToday
-      });
-
-      if (existing) {
-        results.push({ campaign: campaign.name, status: 'skipped (already exists)' });
-        continue;
-      }
-
-      // Calculate daily amount
-      let dailyAmount = 0;
-      if (campaign.type === 'daily') {
-        dailyAmount = campaign.dailyBudget;
-      } else {
-        // Lifetime
-        const totalDurationInDays = getInclusiveDurationInDays(start, end);
-        dailyAmount = campaign.totalBudget / totalDurationInDays;
-      }
-
-      // Create record
-      await DailySpend.create({
-        client: campaign.client,
-        campaign: campaign._id,
-        date: startOfToday,
-        amount: dailyAmount
-      });
-
-      clientsToUpdate.add(campaign.client.toString());
-      results.push({ campaign: campaign.name, status: 'created', amount: dailyAmount });
-    }
+    const { results, clientsToUpdate } = await backfillAllActiveCampaigns(targetDate);
 
     // Recalculate balances only once per client
     for (const clientId of clientsToUpdate) {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Campaign from '@/models/Campaign';
 import { recalculateBalance } from '@/lib/balance';
+import { backfillActiveCampaignsThroughDate, backfillCampaignSpend } from '@/lib/dailySpend';
 import { requireRole } from '@/lib/permissions';
 import { campaignSchema, formatZodError } from '@/lib/validators';
 import { logAudit } from '@/lib/audit';
@@ -14,9 +15,12 @@ export async function GET() {
     if (auth.response) return auth.response;
 
     await dbConnect();
-    
-    // STRICT READ-ONLY: We do not call recalculateBalance here.
-    // Use cached values in Client document for speed.
+
+    const { clientsToUpdate } = await backfillActiveCampaignsThroughDate();
+    for (const clientId of clientsToUpdate) {
+      await recalculateBalance(clientId);
+    }
+
     const campaigns = await Campaign.find({}).populate('client').sort({ createdAt: -1 });
     return NextResponse.json(campaigns);
   } catch (error) {
@@ -37,6 +41,7 @@ export async function POST(req) {
     }
 
     const campaign = await Campaign.create(parsed.data);
+    await backfillCampaignSpend(campaign);
     
     // Auto update client balance
     await recalculateBalance(campaign.client);

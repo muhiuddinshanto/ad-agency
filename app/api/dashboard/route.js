@@ -5,6 +5,7 @@ import Campaign from '@/models/Campaign';
 import DailySpend from '@/models/DailySpend';
 
 import { recalculateBalance } from '@/lib/balance';
+import { backfillActiveCampaignsThroughDate } from '@/lib/dailySpend';
 import { requireRole } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
@@ -15,9 +16,12 @@ export async function GET() {
     if (auth.response) return auth.response;
 
     await dbConnect();
-    
-    // STRICT READ-ONLY: We do not call recalculateBalance or reconcileClientFinance here.
-    // Dashboard just reads what is already in the database truth.
+
+    const { clientsToUpdate } = await backfillActiveCampaignsThroughDate();
+    for (const clientId of clientsToUpdate) {
+      await recalculateBalance(clientId);
+    }
+
     const clients = await Client.find({});
     
     // 1. Total Revenue (Total Paid USD across all clients)
@@ -27,7 +31,10 @@ export async function GET() {
     const totalCampaignBudget = clients.reduce((sum, client) => sum + (client.totalBudget || 0), 0);
     
     // 3. Total Running Spend (All clients)
-    const totalRunningSpend = clients.reduce((sum, client) => sum + (client.totalSpent || 0), 0);
+    const runningSpendTotal = await DailySpend.aggregate([
+      { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+    const totalRunningSpend = runningSpendTotal[0]?.total || 0;
     
     // 4. Total Due (Based on ledger: Spend - Paid)
     const unpaidClients = clients.map(client => {

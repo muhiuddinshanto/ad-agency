@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { getInclusiveDurationInDays } from '@/lib/dateMath';
 
 const CampaignSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -13,14 +14,6 @@ const CampaignSchema = new mongoose.Schema({
   runningSpend: { type: Number, default: 0 },
   manualSpendOverride: { type: Number },
 }, { timestamps: true });
-
-function getInclusiveDurationInDays(startDate, endDate) {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const startUTC = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
-  const endUTC = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
-  return Math.max(1, Math.floor((endUTC - startUTC) / (1000 * 60 * 60 * 24)) + 1);
-}
 
 // Pre-save hook to calculate budgets
 CampaignSchema.pre('save', function(next) {

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Client from '@/models/Client';
 
+import { recalculateBalance } from '@/lib/balance';
+import { backfillActiveCampaignsThroughDate } from '@/lib/dailySpend';
 import { requireRole } from '@/lib/permissions';
 import { clientSchema, formatZodError } from '@/lib/validators';
 import { logAudit } from '@/lib/audit';
@@ -14,9 +16,14 @@ export async function GET() {
     if (auth.response) return auth.response;
 
     await dbConnect();
-    
-    // STRICT READ-ONLY: Use cached values for performance.
-    // Balances are updated via recalculateBalance only on write operations.
+
+    await backfillActiveCampaignsThroughDate();
+
+    const clientsBeforeSync = await Client.find({}).select('_id');
+    for (const client of clientsBeforeSync) {
+      await recalculateBalance(client._id);
+    }
+
     const clients = await Client.find({}).sort({ createdAt: -1 });
     return NextResponse.json(clients);
   } catch (error) {

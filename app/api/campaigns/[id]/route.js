@@ -3,6 +3,7 @@ import dbConnect from '@/lib/mongodb';
 import Campaign from '@/models/Campaign';
 import DailySpend from '@/models/DailySpend';
 import { recalculateBalance } from '@/lib/balance';
+import { backfillCampaignSpend } from '@/lib/dailySpend';
 import { requireRole } from '@/lib/permissions';
 import { campaignSchema, formatZodError } from '@/lib/validators';
 import { logAudit } from '@/lib/audit';
@@ -42,6 +43,8 @@ export async function PUT(req, { params }) {
     
     Object.assign(campaign, parsed.data);
     await campaign.save();
+    await DailySpend.deleteMany({ campaign: campaign._id });
+    await backfillCampaignSpend(campaign);
     
     // Auto update client balance
     await recalculateBalance(campaign.client);
