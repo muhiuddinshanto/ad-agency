@@ -36,8 +36,8 @@ export default function ClientsPage() {
   }, []);
 
   const filteredClients = Array.isArray(clients) ? clients.filter(client => 
-    client.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.companyName?.toLowerCase().includes(searchQuery.toLowerCase())
+    (client.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (client.companyName || '').toLowerCase().includes(searchQuery.toLowerCase())
   ) : [];
 
   const handleEdit = (client) => {
@@ -208,9 +208,17 @@ export default function ClientsPage() {
                     <Zap className="w-3.5 h-3.5" />
                     <span className="text-[10px] uppercase font-black tracking-widest">Live Ad Spend</span>
                   </div>
-                  <div className="flex justify-between items-center text-sm bg-orange-50 px-3 py-2 rounded-xl border border-orange-100">
-                    <span className="text-orange-600 font-bold">Actual Spend:</span>
-                    <span className="font-black text-orange-700">${(client.totalSpent || 0).toLocaleString()}</span>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center text-sm bg-orange-50 px-3 py-2 rounded-xl border border-orange-100">
+                      <span className="text-orange-600 font-bold">Actual Spend:</span>
+                      <span className="font-black text-orange-700">${(client.totalSpent || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs px-1">
+                      <span className="text-slate-500 font-medium">Unpaid Spend:</span>
+                      <span className={`font-bold ${((client.totalSpent || 0) - (client.totalPaid || 0)) > 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                        ${Math.max(0, (client.totalSpent || 0) - (client.totalPaid || 0)).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                 </div>
 

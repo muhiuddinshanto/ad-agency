@@ -29,8 +29,8 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
         type: campaign.type || 'daily',
         dailyBudget: campaign.dailyBudget,
         totalBudget: campaign.totalBudget,
-        startDate: new Date(campaign.startDate).toISOString().slice(0, 16),
-        endDate: new Date(campaign.endDate).toISOString().slice(0, 16),
+        startDate: campaign.startDate ? new Date(campaign.startDate).toISOString().slice(0, 16) : '',
+        endDate: campaign.endDate ? new Date(campaign.endDate).toISOString().slice(0, 16) : '',
         status: campaign.status,
         manualSpendOverride: campaign.manualSpendOverride !== undefined && campaign.manualSpendOverride !== null ? campaign.manualSpendOverride : ''
       });
@@ -69,7 +69,10 @@ export default function CampaignModal({ isOpen, onClose, onSuccess, campaign = n
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          manualSpendOverride: formData.manualSpendOverride === '' ? null : formData.manualSpendOverride
+        }),
       });
 
       if (!res.ok) {
